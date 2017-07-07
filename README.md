@@ -9,8 +9,8 @@ It uses [AWS Parameter Store](https://aws.amazon.com/ec2/systems-manager/paramet
 
 1. Add parameters to [Parameter Store](https://console.aws.amazon.com/ec2/v2/home#Parameters:) using hierarchy in names:
 ```
-$ aws ssm put-parameter --name /prod/my-app/DB_USERNAME --value "Username" --type SecureString --key-id "org-jenkins" --region us-west-2
-$ aws ssm put-parameter --name /prod/my-app/DB_PASSWORD --value "SecretPassword" --type SecureString --key-id "org-jenkins" --region us-west-2
+$ aws ssm put-parameter --name /prod/my-app/DB_USERNAME --value "Username" --type SecureString --key-id "alias/aws/ssm" --region us-west-2
+$ aws ssm put-parameter --name /prod/my-app/DB_PASSWORD --value "SecretPassword" --type SecureString --key-id "alias/aws/ssm" --region us-west-2
 ```
 
 2. Start your application:

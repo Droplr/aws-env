@@ -2,16 +2,16 @@ package main
 
 import (
 	"fmt"
-	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"os"
+	"github.com/aws/aws-sdk-go/service/ssm"
 	"log"
+	"os"
 	"strings"
 )
 
 func main() {
-	exportVariables(os.Getenv("AWS_ENV_PATH"))
+	ExportVariables(os.Getenv("AWS_ENV_PATH"))
 }
 
 func CreateClient() *ssm.SSM {
@@ -19,26 +19,26 @@ func CreateClient() *ssm.SSM {
 	return ssm.New(session)
 }
 
-func exportVariables(path string) {
-  client := CreateClient()
+func ExportVariables(path string) {
+	client := CreateClient()
 
 	input := &ssm.GetParametersByPathInput{
-		Path: &path,
+		Path:           &path,
 		WithDecryption: aws.Bool(true),
 	}
 
-  output, err := client.GetParametersByPath(input)
+	output, err := client.GetParametersByPath(input)
 
 	if err != nil {
-	  log.Panic(err)
+		log.Panic(err)
 	}
 
 	for _, element := range output.Parameters {
-	    printExportParameter(path, element)
+		PrintExportParameter(path, element)
 	}
 }
 
-func printExportParameter(path string, parameter *ssm.Parameter) {
+func PrintExportParameter(path string, parameter *ssm.Parameter) {
 	name := *parameter.Name
 	value := *parameter.Value
 
