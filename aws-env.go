@@ -28,7 +28,7 @@ func ExportVariables(path string, nextToken string) {
 	}
 
 	if nextToken != "" {
-			input.SetNextToken(nextToken)
+		input.SetNextToken(nextToken)
 	}
 
 	output, err := client.GetParametersByPath(input)
