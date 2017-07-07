@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	ExportVariables(os.Getenv("AWS_ENV_PATH"))
+	ExportVariables(os.Getenv("AWS_ENV_PATH"), "")
 }
 
 func CreateClient() *ssm.SSM {
@@ -19,12 +19,16 @@ func CreateClient() *ssm.SSM {
 	return ssm.New(session)
 }
 
-func ExportVariables(path string) {
+func ExportVariables(path string, nextToken string) {
 	client := CreateClient()
 
 	input := &ssm.GetParametersByPathInput{
 		Path:           &path,
 		WithDecryption: aws.Bool(true),
+	}
+
+	if nextToken != "" {
+			input.SetNextToken(nextToken)
 	}
 
 	output, err := client.GetParametersByPath(input)
@@ -35,6 +39,10 @@ func ExportVariables(path string) {
 
 	for _, element := range output.Parameters {
 		PrintExportParameter(path, element)
+	}
+
+	if output.NextToken != nil {
+		ExportVariables(path, *output.NextToken)
 	}
 }
 

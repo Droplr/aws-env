@@ -13,9 +13,14 @@ $ aws ssm put-parameter --name /prod/my-app/DB_USERNAME --value "Username" --typ
 $ aws ssm put-parameter --name /prod/my-app/DB_PASSWORD --value "SecretPassword" --type SecureString --key-id "alias/aws/ssm" --region us-west-2
 ```
 
-2. Start your application:
+2. Install aws-env (choose proper [build version](https://github.com/Droplr/aws-env/tree/master/bin))
+````
+$ wget https://github.com/Droplr/aws-env/raw/master/bin/aws-env-linux-amd64 -O aws-env
 ```
-$ `AWS_ENV_PATH="/prod/my-app/" AWS_REGION=us-west-2 go run aws-env.go` && npm run
+
+3. Start your application:
+```
+$ `AWS_ENV_PATH=/prod/my-app/ AWS_REGION=us-west-2 ./aws-env` && npm run
 ```
 
 Under the hood, aws-env will run:
@@ -28,7 +33,7 @@ $ export DB_PASSWORD=SecretPassword
 ## Example Dockerfile
 
 ```
-
+tbd
 ```
 
 ## Considerations
