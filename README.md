@@ -13,8 +13,8 @@ $ aws ssm put-parameter --name /prod/my-app/DB_USERNAME --value "Username" --typ
 $ aws ssm put-parameter --name /prod/my-app/DB_PASSWORD --value "SecretPassword" --type SecureString --key-id "alias/aws/ssm" --region us-west-2
 ```
 
-2. Install aws-env (choose proper [build version](https://github.com/Droplr/aws-env/tree/master/bin))
-````
+2. Install aws-env (choose proper [prebuilt binary](https://github.com/Droplr/aws-env/tree/master/bin))
+```
 $ wget https://github.com/Droplr/aws-env/raw/master/bin/aws-env-linux-amd64 -O aws-env
 ```
 
