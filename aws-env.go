@@ -11,6 +11,11 @@ import (
 )
 
 func main() {
+	if os.Getenv("AWS_ENV_PATH") == "" {
+		log.Println("aws-env running locally, without AWS_ENV_PATH")
+		return
+	}
+
 	ExportVariables(os.Getenv("AWS_ENV_PATH"), "")
 }
 

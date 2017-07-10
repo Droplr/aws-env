@@ -1,7 +1,7 @@
 aws-env - Secure way to handle environment variables in Docker
 ------------------------
 
-aws-env is small utility that tries to solve problem of passing environment variables to applications in a secure way, especially in Docker containers.
+aws-env is a small utility that tries to solve problem of passing environment variables to applications in a secure way, especially in Docker containers.
 
 It uses [AWS Parameter Store](https://aws.amazon.com/ec2/systems-manager/parameter-store/) to populate environment variables while starting application inside the container.
 
@@ -18,22 +18,46 @@ $ aws ssm put-parameter --name /prod/my-app/DB_PASSWORD --value "SecretPassword"
 $ wget https://github.com/Droplr/aws-env/raw/master/bin/aws-env-linux-amd64 -O aws-env
 ```
 
-3. Start your application:
+3. Start your application with aws-env
+ * `AWS_ENV_PATH` - path of parameters. If it won't be provided, aws-env will exit immediately. That way, you can run your Dockerfiles locally.
+ * `AWS_REGION` and AWS Credentials - [configuring credentials](https://github.com/aws/aws-sdk-go#configuring-credentials)
 ```
 $ `AWS_ENV_PATH=/prod/my-app/ AWS_REGION=us-west-2 ./aws-env` && npm run
 ```
 
-Under the hood, aws-env will run:
+
+Under the hood, aws-env will export environment parameters fetched from AWS Parameter Store:
 
 ```
 $ export DB_USERNAME=Username
 $ export DB_PASSWORD=SecretPassword
 ```
 
+
 ## Example Dockerfile
 
 ```
-tbd
+FROM node:alpine
+
+RUN apk update && apk upgrade && \
+  apk add --no-cache openssl ca-certificates
+
+RUN wget https://github.com/Droplr/aws-env/raw/master/bin/aws-env-linux-amd64 -O /bin/aws-env && \
+  chmod +x /bin/aws-env
+
+CMD `aws-env` && node -e "console.log(process.env)"
+```
+
+```
+$ docker build -t my-app .
+
+$ docker run -v ~/.aws/:/root/.aws -e AWS_ENV_PATH="/prod/my-app/" -e AWS_REGION=us-west-2 -t my-app
+```
+
+For a local development, you you can still use:
+
+```
+$ docker run -t my-app
 ```
 
 ## Considerations
