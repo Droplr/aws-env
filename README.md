@@ -62,7 +62,15 @@ $ docker run -t my-app
 
 ## Considerations
 
+* As this script is still in development, its usage **may** change. Lock version to the
+  specific commit to be sure that your Dockerfiles will work correctly!
+  Example:
+```
+$ wget https://github.com/Droplr/aws-env/raw/befe6fa44ea508508e0bcd2c3f4ac9fc7963d542/bin/aws-env-linux-amd64
+```
+
 * You should never pass AWS credentials inside the containers, instead use IAM Roles for that -
 [Managing Secrets for Amazon ECS Applications Using Parameter Store and IAM Roles for Tasks](
 https://aws.amazon.com/blogs/compute/managing-secrets-for-amazon-ecs-applications-using-parameter-store-and-iam-roles-for-tasks/)
+
 * Always use KMS for parameters encryption - store them as "SecureString"
