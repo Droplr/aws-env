@@ -29,8 +29,8 @@ $ eval $(AWS_ENV_PATH=/prod/my-app/ AWS_REGION=us-west-2 ./aws-env) && node -e "
 Under the hood, aws-env will export environment parameters fetched from AWS Parameter Store:
 
 ```
-$ export DB_USERNAME=Username
-$ export DB_PASSWORD=SecretPassword
+$ export DB_USERNAME=$'Username'
+$ export DB_PASSWORD=$'SecretPassword'
 ```
 
 
@@ -67,6 +67,13 @@ $ docker run -t my-app
   Example:
 ```
 $ wget https://github.com/Droplr/aws-env/raw/befe6fa44ea508508e0bcd2c3f4ac9fc7963d542/bin/aws-env-linux-amd64
+```
+
+* Many Docker images (e.g. ruby) are using /bin/sh as a default shell. It crashes `$'string'`
+  notation that enables multi-line variables export. For this reason, to use aws-env, it's
+  required to switch shell to /bin/bash:
+```
+CMD ["/bin/bash", "-c", "eval $(aws-env) && rails s Puma"]
 ```
 
 * You should never pass AWS credentials inside the containers, instead use IAM Roles for that -
