@@ -22,7 +22,7 @@ $ wget https://github.com/Droplr/aws-env/raw/master/bin/aws-env-linux-amd64 -O a
  * `AWS_ENV_PATH` - path of parameters. If it won't be provided, aws-env will exit immediately. That way, you can run your Dockerfiles locally.
  * `AWS_REGION` and AWS Credentials - [configuring credentials](https://github.com/aws/aws-sdk-go#configuring-credentials)
 ```
-$ `AWS_ENV_PATH=/prod/my-app/ AWS_REGION=us-west-2 ./aws-env` && npm run
+$ eval $(AWS_ENV_PATH=/prod/my-app/ AWS_REGION=us-west-2 ./aws-env) && node -e "console.log(process.env)"
 ```
 
 
@@ -45,7 +45,7 @@ RUN apk update && apk upgrade && \
 RUN wget https://github.com/Droplr/aws-env/raw/master/bin/aws-env-linux-amd64 -O /bin/aws-env && \
   chmod +x /bin/aws-env
 
-CMD `aws-env` && node -e "console.log(process.env)"
+CMD eval $(aws-env) && node -e "console.log(process.env)"
 ```
 
 ```
