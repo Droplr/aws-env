@@ -22,7 +22,7 @@ export DB_PASSWORD=$'SecretPassword'
 2. `ENV_TYPE`: overrides `APP` parameters with the same key
 3. `ENV_NAME`: top level, overrides all others
 
-Example:
+####Example:
   `/my-app/production/prod1/EMAIL` would override the value of `/my-app/EMAIL` for the prod1 environment
   `/my-app/production/API_KEY` would override the value of `/my-app/API_KEY` for the environment type production
   `/my-app/develop/test/API_KEY` would override the value of `/my-app/develop/API_KEY` for the test environment
