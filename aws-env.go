@@ -1,22 +1,46 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ssm"
+	"io/ioutil"
 	"log"
 	"os"
 	"strings"
 )
 
 func main() {
-	if os.Getenv("AWS_ENV_PATH") == "" {
-		log.Println("aws-env running locally, without AWS_ENV_PATH")
-		return
+
+	params := make(map[string]string)
+
+	if os.Getenv("APP") != "" {
+		path := "/" + os.Getenv("APP")
+		log.Printf("Retriving parameters in path %s", path)
+		ExportVariables(path, "", params)
+		if os.Getenv("ENV_TYPE") != "" {
+			path = path + "/" + os.Getenv("ENV_TYPE")
+			log.Printf("Retriving parameters in path %s", path)
+			ExportVariables(path, "", params)
+			if os.Getenv("ENV_NAME") != "" {
+				path = path + "/" + os.Getenv("ENV_NAME")
+				log.Printf("Retriving parameters in path %s", path)
+				ExportVariables(path, "", params)
+			}
+		}
 	}
 
-	ExportVariables(os.Getenv("AWS_ENV_PATH"), "")
+	var buffer bytes.Buffer
+	for key, value := range params {
+		buffer.WriteString(fmt.Sprintf("export %s=$'%s'\n", key, value))
+	}
+
+	err := ioutil.WriteFile("/ssm/.env", buffer.Bytes(), 0744)
+	if err != nil {
+		log.Panic(err)
+	}
 }
 
 func CreateClient() *ssm.SSM {
@@ -24,7 +48,7 @@ func CreateClient() *ssm.SSM {
 	return ssm.New(session)
 }
 
-func ExportVariables(path string, nextToken string) {
+func ExportVariables(path string, nextToken string, params map[string]string ) {
 	client := CreateClient()
 
 	input := &ssm.GetParametersByPathInput{
@@ -43,20 +67,21 @@ func ExportVariables(path string, nextToken string) {
 	}
 
 	for _, element := range output.Parameters {
-		PrintExportParameter(path, element)
+		env, value := PrintExportParameter(path, element)
+		params[env] = value
 	}
 
 	if output.NextToken != nil {
-		ExportVariables(path, *output.NextToken)
+		ExportVariables(path, *output.NextToken, params)
 	}
 }
 
-func PrintExportParameter(path string, parameter *ssm.Parameter) {
+func PrintExportParameter(path string, parameter *ssm.Parameter) (string, string) {
 	name := *parameter.Name
 	value := *parameter.Value
 
 	env := strings.Trim(name[len(path):], "/")
 	value = strings.Replace(value, "\n", "\\n", -1)
 
-	fmt.Printf("export %s=$'%s'\n", env, value)
+	return env, value
 }
