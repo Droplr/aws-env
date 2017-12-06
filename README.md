@@ -23,8 +23,8 @@ export DB_PASSWORD=$'SecretPassword'
 3. `ENV_NAME`: top level, overrides all others
 
 #### Example:
-  `/my-app/production/prod1/EMAIL` would override the value of `/my-app/EMAIL` for the prod1 environment
-  `/my-app/production/API_KEY` would override the value of `/my-app/API_KEY` for the environment type production
+  `/my-app/production/prod1/EMAIL` would override the value of `/my-app/EMAIL` for the prod1 environment<br />
+  `/my-app/production/API_KEY` would override the value of `/my-app/API_KEY` for the environment type production<br />
   `/my-app/develop/test/API_KEY` would override the value of `/my-app/develop/API_KEY` for the test environment
 
 Add parameters to [Parameter Store](https://console.aws.amazon.com/ec2/v2/home#Parameters:) using hierarchy structure:
