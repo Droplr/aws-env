@@ -58,5 +58,5 @@ func PrintExportParameter(path string, parameter *ssm.Parameter) {
 	env := strings.Trim(name[len(path):], "/")
 	value = strings.Replace(value, "\n", "\\n", -1)
 
-	fmt.Printf("export %s=$'%s'\n", env, value)
+	fmt.Printf("export %s='%s'\n", env, value)
 }
