@@ -18,11 +18,17 @@ export DB_PASSWORD=$'SecretPassword'
 
 ## Parameter Hierarchy
 
-1. `APP`: base level
-2. `ENV_TYPE`: overrides `APP` parameters with the same key
-3. `ENV_NAME`: top level, overrides all others
+Provide the hierachy structure using the `PATH` environment variable
+```yml
+PATH: /my-app/production/prod1
+```
 
-#### Example:
+This path can be completely dynamic and the hierarchy can have a maximum depth of five levels. You can define a parameter at any level of the hierarchy. Both of the following examples are valid:
+`/Level-1/Level-2/Level-3/Level-4/Level-5/parameter-name`
+`/Level-1/parameter-name`
+
+Higher levels of the hierarchy will override the lower levels if the same parameter name is found.<br />
+*Example:*
   `/my-app/production/prod1/EMAIL` would override the value of `/my-app/EMAIL` for the prod1 environment<br />
   `/my-app/production/API_KEY` would override the value of `/my-app/API_KEY` for the environment type production<br />
   `/my-app/develop/test/API_KEY` would override the value of `/my-app/develop/API_KEY` for the test environment
@@ -47,9 +53,7 @@ There are 2 ways this can be implemented
 awsenv:
   image: base2/awsenv
   environment:
-    APP: my-app
-    ENV_TYPE: production
-    ENV_NAME: prod1
+    PATH: /my-app/production/prod1
     AWS_REGION: ap-southeast-2
 
 test:

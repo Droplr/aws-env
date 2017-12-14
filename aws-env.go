@@ -14,22 +14,20 @@ import (
 
 func main() {
 
+	keys := strings.Split(os.Getenv("PATH"), "/")
 	params := make(map[string]string)
 
-	if os.Getenv("APP") != "" {
-		path := "/" + os.Getenv("APP")
+	// Remove the empty string created by the split
+	if keys[0] == "" {
+		keys = keys[1:]
+	}
+
+	path := ""
+	// Loop through the sub paths and retrieve parameters
+	for i := range keys {
+		path = path + "/" + keys[i]
 		log.Printf("Retriving parameters in path %s", path)
 		ExportVariables(path, "", params)
-		if os.Getenv("ENV_TYPE") != "" {
-			path = path + "/" + os.Getenv("ENV_TYPE")
-			log.Printf("Retriving parameters in path %s", path)
-			ExportVariables(path, "", params)
-			if os.Getenv("ENV_NAME") != "" {
-				path = path + "/" + os.Getenv("ENV_NAME")
-				log.Printf("Retriving parameters in path %s", path)
-				ExportVariables(path, "", params)
-			}
-		}
 	}
 
 	var buffer bytes.Buffer
@@ -37,6 +35,13 @@ func main() {
 		buffer.WriteString(fmt.Sprintf("export %s=$'%s'\n", key, value))
 	}
 
+	dir := "/ssm"
+	// Create /ssm directory if it doesn't exist
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		os.Mkdir(dir, 0755)
+	}
+
+	// Write evironment variables to .env file
 	err := ioutil.WriteFile("/ssm/.env", buffer.Bytes(), 0744)
 	if err != nil {
 		log.Panic(err)
