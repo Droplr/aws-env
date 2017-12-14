@@ -1,83 +1,79 @@
 aws-env - Secure way to handle environment variables in Docker
 ------------------------
 
-aws-env is a small utility that tries to solve problem of passing environment variables to applications in a secure way, especially in Docker containers.
+Forked from [Droplr/aws-env](https://github.com/Droplr/aws-env)
 
-It uses [AWS Parameter Store](https://aws.amazon.com/ec2/systems-manager/parameter-store/) to populate environment variables while starting application inside the container.
+Published as a [docker image](https://hub.docker.com/r/base2/awsenv/)
+
+## How it works
+
+Searches for SSM Parameters in your AWS account based on the variables provided and places them in a .env file
+
+```bash
+$ cat /ssm/.env
+export DB_HOST=$'mysql'
+export DB_USERNAME=$'Username'
+export DB_PASSWORD=$'SecretPassword'
+```
+
+## Parameter Hierarchy
+
+Provide the hierachy structure using the `PATH` environment variable
+```yml
+PATH: /my-app/production/prod1
+```
+
+This path can be completely dynamic and the hierarchy can have a maximum depth of five levels. You can define a parameter at any level of the hierarchy. Both of the following examples are valid:
+`/Level-1/Level-2/Level-3/Level-4/Level-5/parameter-name`
+`/Level-1/parameter-name`
+
+Higher levels of the hierarchy will override the lower levels if the same parameter name is found.<br />
+*Example:*
+  `/my-app/production/prod1/EMAIL` would override the value of `/my-app/EMAIL` for the prod1 environment<br />
+  `/my-app/production/API_KEY` would override the value of `/my-app/API_KEY` for the environment type production<br />
+  `/my-app/develop/test/API_KEY` would override the value of `/my-app/develop/API_KEY` for the test environment
+
+Add parameters to [Parameter Store](https://console.aws.amazon.com/ec2/v2/home#Parameters:) using hierarchy structure:
+```
+$ aws ssm put-parameter --name /my-app/DB_HOST --value "mysql" --type SecureString --key-id "alias/aws/ssm" --region ap-southeast-2
+$ aws ssm put-parameter --name /my-app/production/DB_USERNAME --value "Username" --type SecureString --key-id "alias/aws/ssm" --region ap-southeast-2
+$ aws ssm put-parameter --name /my-app/production/prod1/DB_PASSWORD --value "SecretPassword" --type SecureString --key-id "alias/aws/ssm" --region ap-southeast-2
+```
 
 ## Usage
 
-1. Add parameters to [Parameter Store](https://console.aws.amazon.com/ec2/v2/home#Parameters:) using hierarchy in names:
-```
-$ aws ssm put-parameter --name /prod/my-app/DB_USERNAME --value "Username" --type SecureString --key-id "alias/aws/ssm" --region us-west-2
-$ aws ssm put-parameter --name /prod/my-app/DB_PASSWORD --value "SecretPassword" --type SecureString --key-id "alias/aws/ssm" --region us-west-2
-```
+There are 2 ways this can be implemented
 
-2. Install aws-env (choose proper [prebuilt binary](https://github.com/Droplr/aws-env/tree/master/bin))
-```
-$ wget https://github.com/Droplr/aws-env/raw/master/bin/aws-env-linux-amd64 -O aws-env
-```
+1. Include `base2/awsenv` as a side car container
 
-3. Start your application with aws-env
- * `AWS_ENV_PATH` - path of parameters. If it won't be provided, aws-env will exit immediately. That way, you can run your Dockerfiles locally.
- * `AWS_REGION` and AWS Credentials - [configuring credentials](https://github.com/aws/aws-sdk-go#configuring-credentials)
-```
-$ eval $(AWS_ENV_PATH=/prod/my-app/ AWS_REGION=us-west-2 ./aws-env) && node -e "console.log(process.env)"
-```
+  * volume mount the `/ssm` directory
+  * eval the `/ssm/.env` file to export the environment parameters
 
+```yml
+awsenv:
+  image: base2/awsenv
+  environment:
+    PATH: /my-app/production/prod1
+    AWS_REGION: ap-southeast-2
 
-Under the hood, aws-env will export environment parameters fetched from AWS Parameter Store:
-
-```
-$ export DB_USERNAME=$'Username'
-$ export DB_PASSWORD=$'SecretPassword'
+test:
+  image: my-app
+  volumes_from:
+    - awsenv
+  entrypoint: eval $(cat /ssm/.env)
 ```
 
+2. Build `FROM base2/awsenv as awsenv` and extract the binary
 
-## Example Dockerfile
+  * extract the binary from the `base2/awsenv` image to your `PATH`
+  * eval the `/ssm/.env` file to export the environment parameters
 
+```Dockerfile
+FROM FROM base2/awsenv as awsenv
+
+FROM debian:jessie
+
+COPY --from=awsenv /awsenv /bin/awsenv
+
+ENTRYPOINT awsenv && eval $(cat /ssm/.env)
 ```
-FROM node:alpine
-
-RUN apk update && apk upgrade && \
-  apk add --no-cache openssl ca-certificates
-
-RUN wget https://github.com/Droplr/aws-env/raw/master/bin/aws-env-linux-amd64 -O /bin/aws-env && \
-  chmod +x /bin/aws-env
-
-CMD eval $(aws-env) && node -e "console.log(process.env)"
-```
-
-```
-$ docker build -t my-app .
-
-$ docker run -v ~/.aws/:/root/.aws -e AWS_ENV_PATH="/prod/my-app/" -e AWS_REGION=us-west-2 -t my-app
-```
-
-For a local development, you you can still use:
-
-```
-$ docker run -t my-app
-```
-
-## Considerations
-
-* As this script is still in development, its usage **may** change. Lock version to the
-  specific commit to be sure that your Dockerfiles will work correctly!
-  Example:
-```
-$ wget https://github.com/Droplr/aws-env/raw/befe6fa44ea508508e0bcd2c3f4ac9fc7963d542/bin/aws-env-linux-amd64
-```
-
-* Many Docker images (e.g. ruby) are using /bin/sh as a default shell. It crashes `$'string'`
-  notation that enables multi-line variables export. For this reason, to use aws-env, it's
-  required to switch shell to /bin/bash:
-```
-CMD ["/bin/bash", "-c", "eval $(aws-env) && rails s Puma"]
-```
-
-* You should never pass AWS credentials inside the containers, instead use IAM Roles for that -
-[Managing Secrets for Amazon ECS Applications Using Parameter Store and IAM Roles for Tasks](
-https://aws.amazon.com/blogs/compute/managing-secrets-for-amazon-ecs-applications-using-parameter-store-and-iam-roles-for-tasks/)
-
-* Always use KMS for parameters encryption - store them as "SecureString"

@@ -1,0 +1,19 @@
+version: '2'
+
+services:
+
+  awsenv:
+    build: ./
+    image: base2/awsenv
+    # tty: true
+    # command: ash
+    environment:
+      PATH: /catch/development/dev
+      AWS_REGION: ap-southeast-2
+
+  test:
+    image: debian:jessie
+    tty: true
+    volumes_from:
+      - awsenv
+    # command: bash -c "eval $$(cat /ssm/.env) && printenv"
