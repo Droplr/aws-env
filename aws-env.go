@@ -1,22 +1,35 @@
 package main
 
 import (
-	"fmt"
+	"log"
+	"os"
+	"os/exec"
+	"path"
+	"syscall"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ssm"
-	"log"
-	"os"
-	"strings"
 )
 
 func main() {
 	if os.Getenv("AWS_ENV_PATH") == "" {
 		log.Println("aws-env running locally, without AWS_ENV_PATH")
-		return
+	} else {
+		ExportVariables(os.Getenv("AWS_ENV_PATH"), "")
 	}
 
-	ExportVariables(os.Getenv("AWS_ENV_PATH"), "")
+	binary, lookErr := exec.LookPath(os.Args[1])
+	if lookErr != nil {
+		panic(lookErr)
+	}
+
+	env := os.Environ()
+	args := os.Args[1:]
+	execErr := syscall.Exec(binary, args, env)
+	if execErr != nil {
+		panic(execErr)
+	}
 }
 
 func CreateClient() *ssm.SSM {
@@ -43,7 +56,7 @@ func ExportVariables(path string, nextToken string) {
 	}
 
 	for _, element := range output.Parameters {
-		PrintExportParameter(path, element)
+		SetExportParameter(element)
 	}
 
 	if output.NextToken != nil {
@@ -51,12 +64,10 @@ func ExportVariables(path string, nextToken string) {
 	}
 }
 
-func PrintExportParameter(path string, parameter *ssm.Parameter) {
+func SetExportParameter(parameter *ssm.Parameter) {
 	name := *parameter.Name
 	value := *parameter.Value
 
-	env := strings.Trim(name[len(path):], "/")
-	value = strings.Replace(value, "\n", "\\n", -1)
-
-	fmt.Printf("export %s=$'%s'\n", env, value)
+	_, envName := path.Split(name)
+	os.Setenv(envName, value)
 }
