@@ -15,10 +15,9 @@ import (
 func main() {
 	if os.Getenv("AWS_ENV_PATH") == "" {
 		log.Println("aws-env running locally, without AWS_ENV_PATH")
-		return
+	} else {
+		ExportVariables(os.Getenv("AWS_ENV_PATH"), "")
 	}
-
-	ExportVariables(os.Getenv("AWS_ENV_PATH"), "")
 
 	binary, lookErr := exec.LookPath(os.Args[1])
 	if lookErr != nil {

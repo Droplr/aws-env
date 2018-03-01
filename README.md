@@ -19,10 +19,10 @@ $ wget https://github.com/Droplr/aws-env/raw/master/bin/aws-env-linux-amd64 -O a
 ```
 
 3. Start your application with aws-env
- * `AWS_ENV_PATH` - path of parameters. If it won't be provided, aws-env will exit immediately. That way, you can run your Dockerfiles locally.
+ * `AWS_ENV_PATH` - path of parameters. If it isn't be provided, aws-env will not make requests to SSM. That way, you can run your Dockerfiles locally.
  * `AWS_REGION` and AWS Credentials - [configuring credentials](https://github.com/aws/aws-sdk-go#configuring-credentials)
 ```
-$ eval $(AWS_ENV_PATH=/prod/my-app/ AWS_REGION=us-west-2 ./aws-env) && node -e "console.log(process.env)"
+$ AWS_ENV_PATH=/prod/my-app/ AWS_REGION=us-west-2 ./aws-env node -e "console.log(process.env)"
 ```
 
 
@@ -45,7 +45,7 @@ RUN apk update && apk upgrade && \
 RUN wget https://github.com/Droplr/aws-env/raw/master/bin/aws-env-linux-amd64 -O /bin/aws-env && \
   chmod +x /bin/aws-env
 
-CMD eval $(aws-env) && node -e "console.log(process.env)"
+CMD aws-env node -e "console.log(process.env)"
 ```
 
 ```
@@ -67,13 +67,6 @@ $ docker run -t my-app
   Example:
 ```
 $ wget https://github.com/Droplr/aws-env/raw/befe6fa44ea508508e0bcd2c3f4ac9fc7963d542/bin/aws-env-linux-amd64
-```
-
-* Many Docker images (e.g. ruby) are using /bin/sh as a default shell. It crashes `$'string'`
-  notation that enables multi-line variables export. For this reason, to use aws-env, it's
-  required to switch shell to /bin/bash:
-```
-CMD ["/bin/bash", "-c", "eval $(aws-env) && rails s Puma"]
 ```
 
 * You should never pass AWS credentials inside the containers, instead use IAM Roles for that -
