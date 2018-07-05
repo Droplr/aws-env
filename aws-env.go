@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -8,7 +9,6 @@ import (
 	"log"
 	"os"
 	"strings"
-        "flag"
 )
 
 func main() {
@@ -17,8 +17,8 @@ func main() {
 		return
 	}
 
-        recursivePtr := flag.Bool("recursive", false, "recursively process parameters on path")
-        flag.Parse()
+	recursivePtr := flag.Bool("recursive", false, "recursively process parameters on path")
+	flag.Parse()
 
 	sess := CreateSession()
 	client := CreateClient(sess)
@@ -35,11 +35,11 @@ func CreateClient(sess *session.Session) *ssm.SSM {
 }
 
 func ExportVariables(client *ssm.SSM, path string, recursive bool, nextToken string) {
-        input := &ssm.GetParametersByPathInput{
-                Path:           &path,
-                WithDecryption: aws.Bool(true),
-                Recursive: aws.Bool(recursive),
-        }
+	input := &ssm.GetParametersByPathInput{
+		Path:           &path,
+		WithDecryption: aws.Bool(true),
+		Recursive:      aws.Bool(recursive),
+	}
 
 	if nextToken != "" {
 		input.SetNextToken(nextToken)
@@ -66,7 +66,7 @@ func PrintExportParameter(path string, parameter *ssm.Parameter) {
 
 	env := strings.Replace(strings.Trim(name[len(path):], "/"), "/", "_", -1)
 	value = strings.Replace(value, "\n", "\\n", -1)
-  value = strings.Replace(value, "'", "\\'", -1)
+	value = strings.Replace(value, "'", "\\'", -1)
 
 	fmt.Printf("export %s=$'%s'\n", env, value)
 }
