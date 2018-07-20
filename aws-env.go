@@ -1,14 +1,20 @@
 package main
 
 import (
+	"flag"
 	"fmt"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ssm"
 	"log"
 	"os"
 	"strings"
-        "flag"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ssm"
+)
+
+const (
+	upper = "upper"
+	lower = "lower"
 )
 
 func main() {
@@ -17,13 +23,19 @@ func main() {
 		return
 	}
 
-        recursivePtr := flag.Bool("recursive", false, "recursively process parameters on path")
-        flag.Parse()
+	recursivePtr := flag.Bool("recursive", false, "recursively process parameters on path")
+	convertCase := flag.String("case", "upper", "Converts ENV Key to upper or lower case")
+	flag.Parse()
+
+	if *convertCase == "upper" || *convertCase == "lower" {
+	} else {
+		log.Fatal("Unsupported case option. Must be 'upper' or 'lower'")
+	}
 
 	sess := CreateSession()
 	client := CreateClient(sess)
 
-	ExportVariables(client, os.Getenv("AWS_ENV_PATH"), *recursivePtr, "")
+	ExportVariables(client, os.Getenv("AWS_ENV_PATH"), *recursivePtr, *convertCase, "")
 }
 
 func CreateSession() *session.Session {
@@ -34,12 +46,12 @@ func CreateClient(sess *session.Session) *ssm.SSM {
 	return ssm.New(sess)
 }
 
-func ExportVariables(client *ssm.SSM, path string, recursive bool, nextToken string) {
-        input := &ssm.GetParametersByPathInput{
-                Path:           &path,
-                WithDecryption: aws.Bool(true),
-                Recursive: aws.Bool(recursive),
-        }
+func ExportVariables(client *ssm.SSM, path string, recursive bool, convertCase string, nextToken string) {
+	input := &ssm.GetParametersByPathInput{
+		Path:           &path,
+		WithDecryption: aws.Bool(true),
+		Recursive:      aws.Bool(recursive),
+	}
 
 	if nextToken != "" {
 		input.SetNextToken(nextToken)
@@ -52,20 +64,26 @@ func ExportVariables(client *ssm.SSM, path string, recursive bool, nextToken str
 	}
 
 	for _, element := range output.Parameters {
-		PrintExportParameter(path, element)
+		PrintExportParameter(path, element, convertCase)
 	}
 
 	if output.NextToken != nil {
-		ExportVariables(client, path, recursive, *output.NextToken)
+		ExportVariables(client, path, recursive, convertCase, *output.NextToken)
 	}
 }
 
-func PrintExportParameter(path string, parameter *ssm.Parameter) {
+func PrintExportParameter(path string, parameter *ssm.Parameter, convertCase string) {
 	name := *parameter.Name
 	value := *parameter.Value
 
 	env := strings.Replace(strings.Trim(name[len(path):], "/"), "/", "_", -1)
 	value = strings.Replace(value, "\n", "\\n", -1)
 
+	switch convertCase {
+	case upper:
+		env = strings.ToUpper(env)
+	case lower:
+		env = strings.ToLower(env)
+	}
 	fmt.Printf("export %s=$'%s'\n", env, value)
 }
