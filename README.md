@@ -33,6 +33,8 @@ $ export DB_USERNAME=$'Username'
 $ export DB_PASSWORD=$'SecretPassword'
 ```
 
+### Optional Flags
+*Recursive*
 You can also pass the `--recursive` flag.  When specified, aws-env will recursively fetch parameters starting from the base path specified in 
 `AWS_ENV_PATH`.  For the exported environment variables, any `/` characters from sub-paths will be converted to `_` characters.  For example:
 
@@ -47,7 +49,27 @@ $ aws ssm put-parameter --name /prod/my-app/db1/DB_PASSWORD --value "OtherSecret
 $ export db0_DB_PASSWORD=$'SecretPassword'
 $ export db1_DB_PASSWORD=$'OtherSecretPassword'
 ```
+*Case*
+You can also pass `--case <upper|lower>` to convert the ENV **KEY** to upper or lower case
 
+With the following parameters:
+```
+$ aws ssm put-parameter --name /prod/my-app/db_password --value "SecretPassword" --type SecureString --key-id "alias/aws/ssm0" --region us-west-2
+```
+
+`eval $(AWS_ENV_PATH=/prod/my-app/ AWS_REGION=us-west-2 ./aws-env --case upper)` will output:
+```
+$ export DB_PASSWORD=$'SecretPassword'
+```
+
+```
+$ aws ssm put-parameter --name /prod/my-app/DB_PASSWORD --value "SecretPassword" --type SecureString --key-id "alias/aws/ssm0" --region us-west-2
+```
+
+`eval $(AWS_ENV_PATH=/prod/my-app/ AWS_REGION=us-west-2 ./aws-env --case lower)` will output:
+```
+$ export db_password=$'SecretPassword'
+```
 ## Example Dockerfile
 
 ```

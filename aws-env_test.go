@@ -26,7 +26,7 @@ func TestPrintExportParamater(t *testing.T) {
 			Path:        "/production",
 			ConvertCase: "upper",
 
-			ExpectedValue: "export MYSQL_PASSWORD=$'passwerd",
+			ExpectedValue: "export MYSQL_PASSWORD=$'passwerd'\n",
 		},
 		{
 
@@ -35,7 +35,7 @@ func TestPrintExportParamater(t *testing.T) {
 			Path:        "/production",
 			ConvertCase: "lower",
 
-			ExpectedValue: "export mysql_password=$'passwerd",
+			ExpectedValue: "export mysql_password=$'passwerd'\n",
 		},
 	}
 	for _, testCase := range testCases {
@@ -62,16 +62,9 @@ func TestPrintExportParamater(t *testing.T) {
 		w.Close()
 		os.Stdout = old // restoring the real stdout
 		out := <-outC
-		// fmt.Println(out)
 
-		if testCase.ConvertCase == "upper" && out != testCase.ExpectedValue {
+		if out != testCase.ExpectedValue {
 			t.Errorf("Action: %scase failed.  We expected: %s. But we got: %s.", testCase.ConvertCase, testCase.ExpectedValue, out)
-
 		}
-		if testCase.ConvertCase == "lower" && out != testCase.ExpectedValue {
-			t.Errorf("Action: %scase failed.  We expected: %s. But we got: %s.", testCase.ConvertCase, testCase.ExpectedValue, out)
-
-		}
-
 	}
 }
