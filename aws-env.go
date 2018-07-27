@@ -24,10 +24,10 @@ func main() {
 	}
 
 	recursivePtr := flag.Bool("recursive", false, "recursively process parameters on path")
-	convertCase := flag.String("case", "upper", "Converts ENV Key to upper or lower case")
+	convertCase := flag.String("case", upper, "Converts ENV Key to upper or lower case")
 	flag.Parse()
 
-	if *convertCase == "upper" || *convertCase == "lower" {
+	if *convertCase == upper || *convertCase == lower {
 	} else {
 		log.Fatal("Unsupported case option. Must be 'upper' or 'lower'")
 	}
