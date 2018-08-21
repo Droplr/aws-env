@@ -1,9 +1,12 @@
 aws-env - Secure way to handle environment variables in Docker
 ------------------------
 
-aws-env is a small utility that tries to solve problem of passing environment variables to applications in a secure way, especially in Docker containers.
+**aws-env** is a small utility that tries to solve problem of passing environment variables to applications in a secure way, especially in a Docker containers. It uses [AWS Parameter Store](https://aws.amazon.com/ec2/systems-manager/parameter-store/) to securely store applications' configuration -- ideal for storing all kind of secrets.
 
-It uses [AWS Parameter Store](https://aws.amazon.com/ec2/systems-manager/parameter-store/) to populate environment variables while starting application inside the container.
+**You can use it in two ways:**
+
+1. Populate environment variables while starting application inside the docker container (default)
+2. Generate .env file (--format=dotenv)
 
 ## Usage
 
@@ -35,7 +38,7 @@ $ export DB_PASSWORD=$'SecretPassword'
 
 ### Optional Flags
 
-*--recursive*
+#### --recursive
 You can pass the `--recursive` flag.  When specified, aws-env will recursively fetch parameters starting from the base path specified in
 `AWS_ENV_PATH`.  For the exported environment variables, any `/` characters from sub-paths will be converted to `_` characters.  For example:
 
@@ -51,7 +54,7 @@ export db0_DB_PASSWORD=$'SecretPassword'
 export db1_DB_PASSWORD=$'OtherSecretPassword'
 ```
 
-*--format*
+#### --format
 
 Specify output format of parameters.
 
