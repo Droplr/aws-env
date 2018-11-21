@@ -36,6 +36,12 @@ $ export DB_USERNAME=$'Username'
 $ export DB_PASSWORD=$'SecretPassword'
 ```
 
+You can also pass multiple colon separated paths in the `AWS_ENV_PATH` variable:
+
+```
+$ export "AWS_ENV_PATH=/my-app/:/my-other-app/"
+```
+
 ### Optional Flags
 
 #### --recursive
