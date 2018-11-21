@@ -36,6 +36,12 @@ $ export DB_USERNAME=$'Username'
 $ export DB_PASSWORD=$'SecretPassword'
 ```
 
+Note that the name of the parameter will be capitalized, ie:
+`/prod/my-app/db_username` will be exported as `DB_USERNAME`
+
+Likewise, any dash characters (`-`) will be replaced with underscores (`_`), ie:
+`/prod/my-app/db-username` will be exported as `DB_USERNAME`
+
 You can also pass multiple colon separated paths in the `AWS_ENV_PATH` variable:
 
 ```

@@ -79,7 +79,7 @@ func OutputParameter(path string, parameter *ssm.Parameter, format string) {
 	name := *parameter.Name
 	value := *parameter.Value
 
-        env := strings.Replace(strings.Trim(name[len(path):], "/"), "/", "_", -1)
+        env := strings.ToUpper(strings.Replace(strings.Replace(strings.Trim(name[len(path):], "/"), "/", "_", -1), "-", "_", -1))
 	value = strings.Replace(value, "\n", "\\n", -1)
 
 	switch format {
