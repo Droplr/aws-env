@@ -34,7 +34,11 @@ func main() {
 	sess := CreateSession()
 	client := CreateClient(sess)
 
-	ExportVariables(client, os.Getenv("AWS_ENV_PATH"), *recursivePtr, *format, "")
+        env_paths := strings.Split(os.Getenv("AWS_ENV_PATH"), ":")
+
+        for i := range env_paths {
+		ExportVariables(client, env_paths[i], *recursivePtr, *format, "")
+        }
 }
 
 func CreateSession() *session.Session {
