@@ -37,7 +37,7 @@ func main() {
         env_paths := strings.Split(os.Getenv("AWS_ENV_PATH"), ":")
 
         for i := range env_paths {
-	    ExportVariables(client, env_paths[i], *recursivePtr, *format, "")
+		ExportVariables(client, env_paths[i], *recursivePtr, *format, "")
         }
 }
 
