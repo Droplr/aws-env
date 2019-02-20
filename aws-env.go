@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"log"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -75,7 +76,7 @@ func OutputParameter(path string, parameter *ssm.Parameter, format string) {
 	name := *parameter.Name
 	value := *parameter.Value
 
-	env := strings.Replace(strings.Trim(name[len(path):], "/"), "/", "_", -1)
+	env := regexp.MustCompile(`\W`).ReplaceAllString(strings.Trim(name[len(path):], "/"), "_")
 	value = strings.Replace(value, "\n", "\\n", -1)
 
 	switch format {
