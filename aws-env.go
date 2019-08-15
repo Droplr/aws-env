@@ -3,12 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ssm"
 	"log"
 	"os"
 	"strings"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ssm"
 )
 
 const (
@@ -18,8 +19,7 @@ const (
 
 func main() {
 	if os.Getenv("AWS_ENV_PATH") == "" {
-		log.Println("aws-env running locally, without AWS_ENV_PATH")
-		return
+		log.Fatal("[aws-env] running locally, without AWS_ENV_PATH")
 	}
 
 	recursivePtr := flag.Bool("recursive", false, "recursively process parameters on path")
@@ -57,9 +57,8 @@ func ExportVariables(client *ssm.SSM, path string, recursive bool, format string
 	}
 
 	output, err := client.GetParametersByPath(input)
-
 	if err != nil {
-		log.Panic(err)
+		log.Fatalf("[aws-env] could not get parameters by path %s: %v\n", path, err)
 	}
 
 	for _, element := range output.Parameters {

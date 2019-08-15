@@ -1,5 +1,7 @@
 #!/bin/bash
 
+GO111MODULE=on
+
 BUILD_DIR=bin
 NAME=aws-env
 
