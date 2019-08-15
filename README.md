@@ -16,9 +16,9 @@ $ aws ssm put-parameter --name /prod/my-app/DB_USERNAME --value "Username" --typ
 $ aws ssm put-parameter --name /prod/my-app/DB_PASSWORD --value "SecretPassword" --type SecureString --key-id "alias/aws/ssm" --region us-west-2
 ```
 
-2. Install aws-env (choose proper [prebuilt binary](https://github.com/Droplr/aws-env/tree/master/bin))
+2. Install aws-env (choose proper [prebuilt binary](https://github.com/olxbr/aws-env/tree/master/bin))
 ```
-$ wget https://github.com/Droplr/aws-env/raw/master/bin/aws-env-linux-amd64 -O aws-env
+$ wget https://github.com/olxbr/aws-env/raw/master/bin/aws-env-linux-amd64 -O aws-env
 ```
 
 3. Start your application with aws-env
@@ -79,7 +79,7 @@ FROM node:alpine
 RUN apk update && apk upgrade && \
   apk add --no-cache openssl ca-certificates
 
-RUN wget https://github.com/Droplr/aws-env/raw/master/bin/aws-env-linux-amd64 -O /bin/aws-env && \
+RUN wget https://github.com/olxbr/aws-env/raw/master/bin/aws-env-linux-amd64 -O /bin/aws-env && \
   chmod +x /bin/aws-env
 
 CMD eval $(aws-env) && node -e "console.log(process.env)"
@@ -98,13 +98,6 @@ $ docker run -t my-app
 ```
 
 ## Considerations
-
-* As this script is still in development, its usage **may** change. Lock version to the
-  specific commit to be sure that your Dockerfiles will work correctly!
-  Example:
-```
-$ wget https://github.com/Droplr/aws-env/raw/befe6fa44ea508508e0bcd2c3f4ac9fc7963d542/bin/aws-env-linux-amd64
-```
 
 * Many Docker images (e.g. ruby) are using /bin/sh as a default shell. It crashes `$'string'`
   notation that enables multi-line variables export. For this reason, to use aws-env, it's

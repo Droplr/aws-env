@@ -22,30 +22,39 @@ func main() {
 		log.Fatal("[aws-env] running locally, without AWS_ENV_PATH")
 	}
 
+	if os.Getenv("AWS_REGION") == "" {
+		log.Fatal("[aws-env] running locally, without AWS_REGION")
+	}
+
 	recursivePtr := flag.Bool("recursive", false, "recursively process parameters on path")
 	format := flag.String("format", formatExports, "output format")
 	flag.Parse()
 
 	if *format == formatExports || *format == formatDotenv {
 	} else {
-		log.Fatal("Unsupported format option. Must be 'exports' or 'dotenv'")
+		log.Fatal("[aws-env] unsupported format option; must be 'exports' or 'dotenv'")
 	}
 
-	sess := CreateSession()
-	client := CreateClient(sess)
+	sess := createSession()
+	client := createClient(sess)
 
-	ExportVariables(client, os.Getenv("AWS_ENV_PATH"), *recursivePtr, *format, "")
+	exported := exportVariables(client, os.Getenv("AWS_ENV_PATH"), *recursivePtr, *format, "")
+	if exported == 0 {
+		log.Fatalf("[aws-env] no variables found at %s on %s\n", os.Getenv("AWS_ENV_PATH"), os.Getenv("AWS_REGION"))
+	}
+
+	log.Printf("[aws-env] %d variable(s) exported\n", exported)
 }
 
-func CreateSession() *session.Session {
+func createSession() *session.Session {
 	return session.Must(session.NewSession())
 }
 
-func CreateClient(sess *session.Session) *ssm.SSM {
+func createClient(sess *session.Session) *ssm.SSM {
 	return ssm.New(sess)
 }
 
-func ExportVariables(client *ssm.SSM, path string, recursive bool, format string, nextToken string) {
+func exportVariables(client *ssm.SSM, path string, recursive bool, format string, nextToken string) int {
 	input := &ssm.GetParametersByPathInput{
 		Path:           &path,
 		WithDecryption: aws.Bool(true),
@@ -61,21 +70,27 @@ func ExportVariables(client *ssm.SSM, path string, recursive bool, format string
 		log.Fatalf("[aws-env] could not get parameters by path %s: %v\n", path, err)
 	}
 
+	count := 0
 	for _, element := range output.Parameters {
-		OutputParameter(path, element, format)
+		outputParameter(path, element, format)
+		count += 1
 	}
 
 	if output.NextToken != nil {
-		ExportVariables(client, path, recursive, format, *output.NextToken)
+		return count + exportVariables(client, path, recursive, format, *output.NextToken)
 	}
+
+	return count
 }
 
-func OutputParameter(path string, parameter *ssm.Parameter, format string) {
+func outputParameter(path string, parameter *ssm.Parameter, format string) {
 	name := *parameter.Name
 	value := *parameter.Value
 
 	env := strings.Replace(strings.Trim(name[len(path):], "/"), "/", "_", -1)
 	value = strings.Replace(value, "\n", "\\n", -1)
+
+	log.Printf("[aws-env] loaded variable %s\n", env)
 
 	switch format {
 	case formatExports:
