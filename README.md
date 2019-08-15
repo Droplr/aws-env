@@ -25,7 +25,7 @@ $ wget https://github.com/olxbr/aws-env/raw/master/bin/aws-env-linux-amd64 -O aw
  * `AWS_ENV_PATH` - path of parameters. If it won't be provided, aws-env will exit immediately. That way, you can run your Dockerfiles locally.
  * `AWS_REGION` and AWS Credentials - [configuring credentials](https://github.com/aws/aws-sdk-go#configuring-credentials)
 ```
-$ eval $(AWS_ENV_PATH=/prod/my-app/ AWS_REGION=us-west-2 ./aws-env) && node -e "console.log(process.env)"
+$ eval $(AWS_ENV_PATH=/prod/my-app/ AWS_REGION=us-west-2 ./aws-env || echo FAIL) && node -e "console.log(process.env)"
 ```
 
 
@@ -82,7 +82,7 @@ RUN apk update && apk upgrade && \
 RUN wget https://github.com/olxbr/aws-env/raw/master/bin/aws-env-linux-amd64 -O /bin/aws-env && \
   chmod +x /bin/aws-env
 
-CMD eval $(aws-env) && node -e "console.log(process.env)"
+CMD eval $(aws-env || echo FAIL) && node -e "console.log(process.env)"
 ```
 
 ```
@@ -103,7 +103,7 @@ $ docker run -t my-app
   notation that enables multi-line variables export. For this reason, to use aws-env, it's
   required to switch shell to /bin/bash:
 ```
-CMD ["/bin/bash", "-c", "eval $(aws-env) && rails s Puma"]
+CMD ["/bin/bash", "-c", "eval $(aws-env || echo FAIL) && rails s Puma"]
 ```
 
 * You should never pass AWS credentials inside the containers, instead use IAM Roles for that -
