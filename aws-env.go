@@ -40,7 +40,9 @@ func main() {
 }
 
 func ssmEndpointResolver(service, region string, optFns ...func(*endpoints.Options)) (endpoints.ResolvedEndpoint, error) {
-	if service == endpoints.SsmServiceID {
+	ssmEndpoint := os.Getenv("AWS_SSM_ENDPOINT")
+
+	if service == endpoints.SsmServiceID && len(ssmEndpoint) > 0 {
 		return endpoints.ResolvedEndpoint{
 			URL: os.Getenv("AWS_SSM_ENDPOINT"),
 		}, nil
