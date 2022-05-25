@@ -3,12 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
+	"os"
+	"sort"
+	"strings"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ssm"
-	"log"
-	"os"
-	"strings"
 )
 
 const (
@@ -22,7 +24,7 @@ func main() {
 		return
 	}
 
-	recursivePtr := flag.Bool("recursive", false, "recursively process parameters on path")
+	recursive := flag.Bool("recursive", false, "recursively process parameters on path")
 	format := flag.String("format", formatExports, "output format")
 	flag.Parse()
 
@@ -31,21 +33,23 @@ func main() {
 		log.Fatal("Unsupported format option. Must be 'exports' or 'dotenv'")
 	}
 
-	sess := CreateSession()
-	client := CreateClient(sess)
+	env_paths := strings.Split(os.Getenv("AWS_ENV_PATH"), ":")
 
-	ExportVariables(client, os.Getenv("AWS_ENV_PATH"), *recursivePtr, *format, "")
+	session := session.Must(session.NewSessionWithOptions(
+		session.Options{
+			SharedConfigState: session.SharedConfigEnable}))
+	client := ssm.New(session)
+
+	results := make(map[string]string)
+
+	for i := range env_paths {
+		FetchParameters(client, env_paths[i], *recursive, *format, results, "")
+	}
+
+	PrintResults(results, *format)
 }
 
-func CreateSession() *session.Session {
-	return session.Must(session.NewSessionWithOptions(session.Options{SharedConfigState: session.SharedConfigEnable}))
-}
-
-func CreateClient(sess *session.Session) *ssm.SSM {
-	return ssm.New(sess)
-}
-
-func ExportVariables(client *ssm.SSM, path string, recursive bool, format string, nextToken string) {
+func FetchParameters(client *ssm.SSM, path string, recursive bool, format string, results map[string]string, nextToken string) {
 	input := &ssm.GetParametersByPathInput{
 		Path:           &path,
 		WithDecryption: aws.Bool(true),
@@ -62,26 +66,34 @@ func ExportVariables(client *ssm.SSM, path string, recursive bool, format string
 		log.Panic(err)
 	}
 
-	for _, element := range output.Parameters {
-		OutputParameter(path, element, format)
+	for _, parameter := range output.Parameters {
+		name := *parameter.Name
+		value := *parameter.Value
+
+		name = strings.Replace(strings.Trim(name[len(path):], "/"), "/", "_", -1)
+		value = strings.Replace(value, "\n", "\\n", -1)
+
+		results[name] = value
 	}
 
 	if output.NextToken != nil {
-		ExportVariables(client, path, recursive, format, *output.NextToken)
+		FetchParameters(client, path, recursive, format, results, *output.NextToken)
 	}
 }
 
-func OutputParameter(path string, parameter *ssm.Parameter, format string) {
-	name := *parameter.Name
-	value := *parameter.Value
+func PrintResults(results map[string]string, format string) {
+	keys := make([]string, 0, len(results))
+	for k := range results {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
 
-	env := strings.Replace(strings.Trim(name[len(path):], "/"), "/", "_", -1)
-	value = strings.Replace(value, "\n", "\\n", -1)
+	formatSpec := "export %s=$'%s'\n"
+	if format == formatDotenv {
+		formatSpec = "%s=\"%s\"\n"
+	}
 
-	switch format {
-	case formatExports:
-		fmt.Printf("export %s=$'%s'\n", env, value)
-	case formatDotenv:
-		fmt.Printf("%s=\"%s\"\n", env, value)
+	for _, k := range keys {
+		fmt.Printf(formatSpec, k, results[k])
 	}
 }
