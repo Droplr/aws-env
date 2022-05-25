@@ -42,8 +42,8 @@ func main() {
 
 	results := make(map[string]string)
 
-	for i := range env_paths {
-		FetchParameters(client, env_paths[i], *recursive, *format, results, "")
+	for _, path := range env_paths {
+		FetchParameters(client, path, *recursive, *format, results, "")
 	}
 
 	PrintResults(results, *format)
