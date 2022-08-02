@@ -3,12 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ssm"
 	"log"
 	"os"
 	"strings"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/endpoints"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ssm"
 )
 
 const (
@@ -37,8 +39,23 @@ func main() {
 	ExportVariables(client, os.Getenv("AWS_ENV_PATH"), *recursivePtr, *format, "")
 }
 
+func ssmEndpointResolver(service, region string, optFns ...func(*endpoints.Options)) (endpoints.ResolvedEndpoint, error) {
+	ssmEndpoint := os.Getenv("AWS_SSM_ENDPOINT")
+
+	if service == endpoints.SsmServiceID && len(ssmEndpoint) > 0 {
+		return endpoints.ResolvedEndpoint{
+			URL: os.Getenv("AWS_SSM_ENDPOINT"),
+		}, nil
+	}
+
+	return endpoints.DefaultResolver().EndpointFor(service, region, optFns...)
+}
+
 func CreateSession() *session.Session {
-	return session.Must(session.NewSession())
+	return session.Must(session.NewSession(&aws.Config{
+		Region:           aws.String(os.Getenv("AWS_REGION")),
+		EndpointResolver: endpoints.ResolverFunc(ssmEndpointResolver),
+	}))
 }
 
 func CreateClient(sess *session.Session) *ssm.SSM {
