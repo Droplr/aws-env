@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"log"
@@ -59,7 +60,12 @@ func ExportVariables(client *ssm.SSM, path string, recursive bool, format string
 	output, err := client.GetParametersByPath(input)
 
 	if err != nil {
-		log.Panic(err)
+		if aerr, ok := err.(awserr.Error); ok {
+			log.Println(aerr.Error())
+		} else {
+			log.Println(err.Error())
+		}
+		os.Exit(1)
 	}
 
 	for _, element := range output.Parameters {
