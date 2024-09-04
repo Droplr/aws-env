@@ -1,14 +1,17 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ssm"
 	"log"
 	"os"
 	"strings"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/ssm"
+	"github.com/aws/aws-sdk-go-v2/service/ssm/types"
 )
 
 const (
@@ -31,21 +34,26 @@ func main() {
 		log.Fatal("Unsupported format option. Must be 'exports' or 'dotenv'")
 	}
 
-	sess := CreateSession()
-	client := CreateClient(sess)
+	cfg := CreateSession()
+	client := CreateClient(cfg)
 
 	ExportVariables(client, os.Getenv("AWS_ENV_PATH"), *recursivePtr, *format, "")
 }
 
-func CreateSession() *session.Session {
-	return session.Must(session.NewSession())
+func CreateSession() aws.Config {
+	cfg, err := config.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		panic("unable to load SDK config, " + err.Error())
+	} else {
+		return cfg
+	}
 }
 
-func CreateClient(sess *session.Session) *ssm.SSM {
-	return ssm.New(sess)
+func CreateClient(cfg aws.Config) *ssm.Client {
+	return ssm.NewFromConfig(cfg)
 }
 
-func ExportVariables(client *ssm.SSM, path string, recursive bool, format string, nextToken string) {
+func ExportVariables(client *ssm.Client, path string, recursive bool, format string, nextToken string) {
 	input := &ssm.GetParametersByPathInput{
 		Path:           &path,
 		WithDecryption: aws.Bool(true),
@@ -53,17 +61,17 @@ func ExportVariables(client *ssm.SSM, path string, recursive bool, format string
 	}
 
 	if nextToken != "" {
-		input.SetNextToken(nextToken)
+		input.NextToken = &nextToken
 	}
 
-	output, err := client.GetParametersByPath(input)
+	output, err := client.GetParametersByPath(context.TODO(), input)
 
 	if err != nil {
 		log.Panic(err)
 	}
 
 	for _, element := range output.Parameters {
-		OutputParameter(path, element, format)
+		OutputParameter(path, &element, format)
 	}
 
 	if output.NextToken != nil {
@@ -71,7 +79,7 @@ func ExportVariables(client *ssm.SSM, path string, recursive bool, format string
 	}
 }
 
-func OutputParameter(path string, parameter *ssm.Parameter, format string) {
+func OutputParameter(path string, parameter *types.Parameter, format string) {
 	name := *parameter.Name
 	value := *parameter.Value
 
