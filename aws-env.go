@@ -77,6 +77,7 @@ func OutputParameter(path string, parameter *ssm.Parameter, format string) {
 
 	env := strings.Replace(strings.Trim(name[len(path):], "/"), "/", "_", -1)
 	value = strings.Replace(value, "\n", "\\n", -1)
+	value = strings.Replace(value, "'", "\\'", -1)
 
 	switch format {
 	case formatExports:
