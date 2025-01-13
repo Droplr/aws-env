@@ -11,6 +11,11 @@ import (
 	"strings"
 )
 
+const (
+	formatExports = "exports"
+	formatDotenv  = "dotenv"
+)
+
 func main() {
 	if os.Getenv("AWS_ENV_PATH") == "" {
 		log.Println("aws-env running locally, without AWS_ENV_PATH")
@@ -18,12 +23,18 @@ func main() {
 	}
 
 	recursivePtr := flag.Bool("recursive", false, "recursively process parameters on path")
+	format := flag.String("format", formatExports, "output format")
 	flag.Parse()
+
+	if *format == formatExports || *format == formatDotenv {
+	} else {
+		log.Fatal("Unsupported format option. Must be 'exports' or 'dotenv'")
+	}
 
 	sess := CreateSession()
 	client := CreateClient(sess)
 
-	ExportVariables(client, os.Getenv("AWS_ENV_PATH"), *recursivePtr, "")
+	ExportVariables(client, os.Getenv("AWS_ENV_PATH"), *recursivePtr, *format, "")
 }
 
 func CreateSession() *session.Session {
@@ -34,7 +45,7 @@ func CreateClient(sess *session.Session) *ssm.SSM {
 	return ssm.New(sess)
 }
 
-func ExportVariables(client *ssm.SSM, path string, recursive bool, nextToken string) {
+func ExportVariables(client *ssm.SSM, path string, recursive bool, format string, nextToken string) {
 	input := &ssm.GetParametersByPathInput{
 		Path:           &path,
 		WithDecryption: aws.Bool(true),
@@ -52,15 +63,15 @@ func ExportVariables(client *ssm.SSM, path string, recursive bool, nextToken str
 	}
 
 	for _, element := range output.Parameters {
-		PrintExportParameter(path, element)
+		OutputParameter(path, element, format)
 	}
 
 	if output.NextToken != nil {
-		ExportVariables(client, path, recursive, *output.NextToken)
+		ExportVariables(client, path, recursive, format, *output.NextToken)
 	}
 }
 
-func PrintExportParameter(path string, parameter *ssm.Parameter) {
+func OutputParameter(path string, parameter *ssm.Parameter, format string) {
 	name := *parameter.Name
 	value := *parameter.Value
 
@@ -68,5 +79,10 @@ func PrintExportParameter(path string, parameter *ssm.Parameter) {
 	value = strings.Replace(value, "\n", "\\n", -1)
 	value = strings.Replace(value, "'", "\\'", -1)
 
-	fmt.Printf("export %s=$'%s'\n", env, value)
+	switch format {
+	case formatExports:
+		fmt.Printf("export %s=$'%s'\n", env, value)
+	case formatDotenv:
+		fmt.Printf("%s=\"%s\"\n", env, value)
+	}
 }
