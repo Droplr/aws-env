@@ -5,8 +5,12 @@ NAME=aws-env
 
 mkdir $BUILD_DIR
 
-for GOOS in darwin linux windows; do
-    for GOARCH in 386 amd64; do
-        GOOS=$GOOS GOARCH=$GOARCH go build -v -o $BUILD_DIR/$NAME-$GOOS-$GOARCH
-    done
+platforms=("windows/amd64" "windows/386" "darwin/amd64" "linux/amd64" "linux/386" "linux/arm" "linux/arm64")
+
+for platform in "${platforms[@]}"; do
+    GOOS=${platform%/*}
+    GOARCH=${platform#*/}
+    echo "Building $NAME for $GOOS/$GOARCH"
+    GOOS=$GOOS GOARCH=$GOARCH go build -v -o $BUILD_DIR/$NAME-$GOOS-$GOARCH
 done
+
