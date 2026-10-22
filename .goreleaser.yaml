@@ -1,0 +1,41 @@
+version: 2
+
+project_name: aws-env
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos: [linux, darwin]
+    goarch: [amd64, arm64]
+    flags: [-trimpath]
+    ldflags:
+      - -s -w -X main.version={{ .Tag }}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+# Plain binaries, named like the old bin/ files, so Dockerfiles can download and
+# check them without unpacking: aws-env-linux-amd64, aws-env-darwin-arm64, ...
+archives:
+  - formats: [binary]
+    name_template: "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}"
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+# Keyless signature of checksums.txt (GitHub OIDC); it covers every binary.
+signs:
+  - cmd: cosign
+    artifacts: checksum
+    signature: "${artifact}.sigstore.json"
+    args:
+      - sign-blob
+      - --yes
+      - --bundle=${signature}
+      - ${artifact}
+
+changelog:
+  use: github-native
+
+release:
+  draft: false
+  prerelease: auto
